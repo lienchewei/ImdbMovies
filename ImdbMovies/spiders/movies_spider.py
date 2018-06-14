@@ -86,6 +86,7 @@ class ImdbMoviesSpider(scrapy.Spider):
                 request = scrapy.Request(url=company_link, callback=self.parse_movies_company)
                 request.meta['movie'] = movie
                 yield request
+        
 
     def parse_movies_reledate(self, response):
 
@@ -102,7 +103,7 @@ class ImdbMoviesSpider(scrapy.Spider):
             movie['releaseDate'] = rel_date_list
         except (TypeError, AttributeError):
             movie['releaseDate'] = None
-        yield movie
+        
 
     def parse_movies_company(self, response):
 
@@ -119,4 +120,3 @@ class ImdbMoviesSpider(scrapy.Spider):
         except (TypeError, AttributeError):
             movie['distributor'] = None
         yield movie
-
