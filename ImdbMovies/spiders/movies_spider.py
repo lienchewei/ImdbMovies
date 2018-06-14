@@ -1,9 +1,13 @@
 import scrapy
+
 from ImdbMovies.items import ImdbmoviesItem
+
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
+from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 
 imdb_url = 'http://www.imdb.com'
-
 
 class ImdbMoviesSpider(scrapy.Spider):
 
@@ -13,7 +17,9 @@ class ImdbMoviesSpider(scrapy.Spider):
     def parse(self, response):
         for td in response.css('td.overview-top'):
             movie_link = imdb_url+td.css('a::attr(href)').extract_first()
-            yield scrapy.Request(url=movie_link, callback=self.parse_movies_metadata)
+            yield scrapy.Request(url=movie_link, callback=self.parse_movies_metadata,
+                                                 errback=self.errback_httpbin,
+                                                 dont_filter=True)
 
         next_page = response.css('div.sort a::attr(href)').extract_first()
         if next_page is not None:
@@ -120,3 +126,20 @@ class ImdbMoviesSpider(scrapy.Spider):
         except (TypeError, AttributeError):
             movie['distributor'] = None
         yield movie
+    
+    def errback_httpbin(self, failure):
+        # log all failure
+        self.logger.error(repr(failure))
+
+        # in case you want to do something special for some errors,
+        # you may need the failure's type:
+
+        if failure.check(HttpError):
+            reaponse = failure.value.reaponse
+            self.logger.error('HttpError on %s', response.url)
+        elif failure.check(DNSLookupError):
+            resquest = failure.resquest
+            self.logger.error('DNSLookupError on %s', request.url)
+        elif failure.check(TimeoutError, TCPTimedOutError):
+            request = failure.request
+            self.logger.error('TimeoutError on %s', request.url)
