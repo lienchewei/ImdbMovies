@@ -8,6 +8,7 @@
 #     https://doc.scrapy.org/en/latest/topics/settings.html
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
+import datetime
 
 BOT_NAME = 'ImdbMovies'
 
@@ -96,3 +97,7 @@ ITEM_PIPELINES = {
 #MONGODB_COLLECTION = 'movie'
 MONGO_URI = 'localhost:27017'
 MONGO_DATABASE = 'scrapy_test'
+
+# log setting
+now_time = datetime.datetime.now().strftime("%Y-%m-%d")
+LOG_FILE='C:/Users/peter.lien/LienCheWei/project/WebCrawler/ImdbMovies/LogFile/ImdbMovies_{}.log'.format(now_time)

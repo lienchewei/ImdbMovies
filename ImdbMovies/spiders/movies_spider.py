@@ -1,5 +1,5 @@
 import scrapy
-
+import logging
 from ImdbMovies.items import ImdbmoviesItem
 
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -8,6 +8,7 @@ from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 
 imdb_url = 'http://www.imdb.com'
+logger = logging.getLogger('imdbmovieslogger')
 
 class ImdbMoviesSpider(scrapy.Spider):
 
@@ -83,21 +84,18 @@ class ImdbMoviesSpider(scrapy.Spider):
             elif h4_text == 'Release Date:':
                 rel_date_href = div.xpath('.//span[@class="see-more inline"]/a/@href').extract_first()
                 rel_date_link = response.url.replace('?ref_=cs_ov_tt', rel_date_href)
-                request = scrapy.Request(url=rel_date_link, callback=self.parse_movies_reledate)
-                request.meta['movie'] = movie
-                yield request
+                yield scrapy.Request(url=rel_date_link, meta={'movie': movie}, callback=self.parse_movies_reledate)
+                
             elif h4_text == 'Production Co:':
                 company_href = div.xpath('.//span[@class="see-more inline"]/a/@href').extract_first()
                 company_link = response.url.replace('?ref_=cs_ov_tt', company_href)
-                request = scrapy.Request(url=company_link, callback=self.parse_movies_company)
-                request.meta['movie'] = movie
-                yield request
+                yield scrapy.Request(url=company_link, meta={'movie': movie}, callback=self.parse_movies_company)
         
 
+
     def parse_movies_reledate(self, response):
-
+        
         movie = response.meta['movie']
-
         trs = response.xpath('//table[@id="release_dates"]/tr')
         rel_date_list = []
         for tr in trs:
@@ -114,7 +112,6 @@ class ImdbMoviesSpider(scrapy.Spider):
     def parse_movies_company(self, response):
 
         movie = response.meta['movie']
-
         try:
             movie['production'] = response.xpath(
                 '(//div[@id="company_credits_content"]/ul[@class="simpleList"])[1]/li/a/text()').extract()
@@ -126,6 +123,7 @@ class ImdbMoviesSpider(scrapy.Spider):
         except (TypeError, AttributeError):
             movie['distributor'] = None
         yield movie
+        
     
     def errback_httpbin(self, failure):
         # log all failure
